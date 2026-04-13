@@ -1,0 +1,79 @@
+{
+  "strictness": 1,
+  "commentTypes": ["logic", "syntax", "style", "info"],
+  "fileChangeLimit": 500,
+  "triggerOnUpdates": true,
+  "statusCheck": true,
+  "fixWithAI": true,
+  "updateExistingSummaryComment": true,
+  "excludeAuthors": ["dependabot[bot]", "renovate[bot]", "github-actions[bot]"],
+  "ignorePatterns": "greptile.json\n*.lock\npackage-lock.json\nyarn.lock\npnpm-lock.yaml\n**/*.generated.*\n**/node_modules/**\n**/.next/**\n**/dist/**\n**/build/**\n**/.git/**\n**/*.log\n.tracking-db/**\ndocs/sessions/**\ngo/dist/**\n**/.claude/agent-memory/**\n**/.claude/agent-memory-local/**\n**/.sigma/backlogs/**\n**/.sigma/orchestration/**\n.sprint-state.json\n.pipeline-state.json\n*.min.js\n*.min.css\n*.map",
+  "summarySection": {
+    "included": true,
+    "collapsible": false,
+    "defaultOpen": true
+  },
+  "confidenceScoreSection": {
+    "included": true,
+    "collapsible": false,
+    "defaultOpen": true
+  },
+  "sequenceDiagramSection": {
+    "included": true,
+    "collapsible": true,
+    "defaultOpen": false
+  },
+  "issuesTableSection": {
+    "included": true,
+    "collapsible": false,
+    "defaultOpen": true
+  },
+  "instructions": "This codebase follows the Sigma Protocol methodology. Focus on: (1) Logic bugs and edge cases, (2) Security vulnerabilities (hardcoded secrets, missing auth checks, injection risks), (3) Anti-slop patterns (verbose comments that restate code, hedging language in error messages, unnecessary filler), (4) Missing error handling at system boundaries, (5) Type safety gaps. Do NOT flag: minor style preferences already handled by linters, TODO comments (these are intentional), test file structure choices, import ordering.",
+  "rules": [
+    {
+      "id": "no-hardcoded-secrets",
+      "rule": "Flag any hardcoded API keys, tokens, passwords, or secrets. Look for patterns: sk-, ghp_, gho_, AKIA, password=, secret=, api_key=, private_key, BEGIN RSA PRIVATE. Environment variables or vault references are the correct approach.",
+      "severity": "high"
+    },
+    {
+      "id": "auth-check-required",
+      "rule": "Every user-facing API endpoint or mutation must verify authentication before processing. Flag endpoints that skip auth verification.",
+      "severity": "high",
+      "scope": ["**/api/**", "**/routes/**", "**/mutations.*", "convex/**"]
+    },
+    {
+      "id": "no-slop-comments",
+      "rule": "Flag verbose comments that restate what the code already says. Comments like '// This function does X' where X is obvious from the function name, '// Initialize variables', '// Return the result', or separator comments like '// ---' and '// ===' are noise. Comments should explain WHY, not WHAT.",
+      "severity": "medium"
+    },
+    {
+      "id": "no-console-log",
+      "rule": "Flag console.log, console.warn, console.error in production code. Use a structured logger instead. Exception: test files and dev-only debug utilities.",
+      "severity": "medium",
+      "scope": ["src/**", "apps/**", "server/**", "ui/**", "convex/**"]
+    },
+    {
+      "id": "error-handling-boundaries",
+      "rule": "Async functions that call external APIs, databases, or file system must have error handling (try-catch or .catch). Internal function calls between modules do not need defensive error handling.",
+      "severity": "medium"
+    },
+    {
+      "id": "no-any-type",
+      "rule": "Flag usage of 'any' type in TypeScript. Use 'unknown' with type narrowing, or define proper types. Exception: third-party library interop where types are unavailable.",
+      "severity": "medium",
+      "scope": ["**/*.ts", "**/*.tsx"]
+    },
+    {
+      "id": "input-validation",
+      "rule": "User input from API requests, form submissions, and URL parameters must be validated before use. Use Zod schemas, Convex validators (v.*), or equivalent. Flag raw req.body access without validation.",
+      "severity": "high",
+      "scope": ["**/api/**", "**/routes/**", "convex/**"]
+    },
+    {
+      "id": "no-barrel-exports",
+      "rule": "Do not use barrel exports (index.ts that re-exports from other files). Import directly from source files. This prevents circular dependencies and improves tree-shaking.",
+      "severity": "low",
+      "scope": ["**/*.ts", "**/*.tsx"]
+    }
+  ]
+}
